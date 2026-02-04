@@ -1,0 +1,38 @@
+# Astro / Airflow
+.astro/
+airflow_settings.yaml
+logs/
+tmp/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Spark / Delta
+metastore_db/
+derby.log
+spark-warehouse/
+*.crc
+
+# Data Lake Local (Ignora arquivos, mantém pastas)
+data/bronze/*
+data/silver/*
+data/gold/*
+!data/bronze/.gitkeep
+!data/silver/.gitkeep
+!data/gold/.gitkeep
+!data/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# DuckDB
+*.db
+*.duckdb
