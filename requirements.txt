@@ -1,1 +1,7 @@
-# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+pyspark==3.5.0
+delta-spark==3.0.0
+duckdb==0.9.2
+great-expectations==0.18.8
+requests
+pandas
+pytest
