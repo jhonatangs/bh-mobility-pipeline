@@ -16,7 +16,6 @@ def run_analytics_query():
 
     print(">>> RELATÓRIO DE MOBILIDADE (DUCKDB) <<<")
 
-    # CAMINHO CORRIGIDO AQUI:
     table_path = "/opt/airflow/data/gold/mobility_analytics"
 
     # Query demonstrando o Join (trazendo o Consórcio)

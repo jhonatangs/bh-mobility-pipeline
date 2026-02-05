@@ -134,19 +134,14 @@ def extract_mco_data():
 
                 if year_links:
                     print(f"📆 Encontrados arquivos de {year}!")
-                    # Geralmente o último da lista é o mês mais recente (Dezembro) se a lista for ordenada
-                    # Ou podemos pegar o primeiro se for ordenação decrescente.
-                    # Na dúvida do portal da PBH, pegamos o PRIMEIRO da lista filtrada por ano recente,
-                    # pois portais costumam destacar o mais novo no topo.
-                    target_link = year_links[0]
+                    target_link = year_links[-1]
                     break
 
-            # Fallback: Se não achou ano, pega o primeiro da lista geral
             if not target_link:
                 print(
-                    "⚠️ Ano não identificado nos nomes. Pegando o primeiro da lista geral."
+                    "⚠️ Ano não identificado nos nomes. Pegando o último da lista geral."
                 )
-                target_link = candidates[0]
+                target_link = candidates[-1]
 
             print(
                 f"🎯 Selecionado para download: {target_link['text']} ({target_link['href']})"

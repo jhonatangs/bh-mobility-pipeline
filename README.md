@@ -100,8 +100,6 @@ Tabela: `mobility_analytics` (Formato Delta)
 | `last_seen` | Timestamp | Última localização registrada. |
 | `latitude` / `longitude` | Double | Coordenadas geográficas tratadas. |
 
-> **Nota sobre Dados:** Devido a divergências entre os códigos de linha do sistema de GPS em Tempo Real (ex: códigos internos numéricos) e os códigos públicos do MCO (ex: alfanuméricos), algumas junções podem resultar em campos de dimensão nulos (`None`). A arquitetura prioriza a integridade dos dados de GPS (Left Join) para não descartar eventos de mobilidade.
-
 ---
 
 ## ⚠️ Troubleshooting
@@ -116,4 +114,4 @@ Se o Airflow não encontrar o navegador:
 
 ---
 
-**Autor:** [Seu Nome]
+**Autor:** Jhonatan
