@@ -1,5 +1,5 @@
 from include.scripts.spark_utils import get_spark_session
-from pyspark.sql.functions import count, max, min, col, avg, lit
+from pyspark.sql.functions import count, max, min, lit
 
 
 def process_gold():

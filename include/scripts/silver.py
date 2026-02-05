@@ -7,7 +7,6 @@ from pyspark.sql.functions import (
     upper,
     lit,
     regexp_replace,
-    when,
 )
 from pyspark.sql.types import DoubleType
 

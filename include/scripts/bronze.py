@@ -3,7 +3,6 @@ import os
 import pandas as pd
 from datetime import datetime
 from playwright.sync_api import sync_playwright
-import time
 
 
 def get_json_via_playwright(url):
