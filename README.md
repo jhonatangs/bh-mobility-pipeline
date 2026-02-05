@@ -1,45 +1,119 @@
-Overview
-========
+# 🚌 Pipeline de Dados - Mobilidade Urbana (BH)
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+![Status](https://img.shields.io/badge/Status-Completed-success)
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![Spark](https://img.shields.io/badge/Apache%20Spark-3.5-orange)
+![Delta Lake](https://img.shields.io/badge/Delta%20Lake-3.0-blueviolet)
+![Playwright](https://img.shields.io/badge/Ingestion-Playwright-green)
 
-Project Contents
-================
+Solução de Engenharia de Dados *end-to-end* para ingestão, processamento e análise de dados reais de mobilidade urbana (ônibus) de Belo Horizonte. A arquitetura implementa um **Lakehouse Local** resiliente, capaz de contornar instabilidades do portal de dados abertos governamental.
 
-Your Astro project contains the following files and folders:
+---
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+## 🏗 Arquitetura da Solução
 
-Deploy Your Project Locally
-===========================
+O projeto segue a arquitetura **Medallion (Bronze, Silver, Gold)**, orquestrada via Airflow.
 
-Start Airflow on your local machine by running 'astro dev start'.
+```mermaid
+graph LR
+    subgraph "Ingestão Resiliente (Bronze)"
+        PBH[Portal PBH] -->|Playwright/Headless| GPS[Bronze GPS (Parquet)]
+        PBH -->|Playwright/Scraping| MCO[Bronze MCO (Parquet)]
+    end
 
-This command will spin up five Docker containers on your machine, each for a different Airflow component:
+    subgraph "Processamento (Silver)"
+        GPS -->|Spark + Delta| SilverGPS[Silver GPS (Limpeza/Schema)]
+        MCO -->|Spark + Delta| SilverMCO[Silver MCO (Dimensão)]
+    end
 
-- Postgres: Airflow's Metadata Database
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- DAG Processor: The Airflow component responsible for parsing DAGs
-- API Server: The Airflow component responsible for serving the Airflow UI and API
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+    subgraph "Serving (Gold & Analytics)"
+        SilverGPS -->|Join| Gold[Gold Mobility Analytics]
+        SilverMCO -->|Join| Gold
+        Gold -->|DuckDB SQL| Analytics[Relatório Final]
+    end
+```
 
-When all five containers are ready the command will open the browser to the Airflow UI at http://localhost:8080/. You should also be able to access your Postgres Database at 'localhost:5432/postgres' with username 'postgres' and password 'postgres'.
+### Destaques Técnicos
 
-Note: If you already have either of the above ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+1.  **Ingestão via Playwright:** Implementação de *Web Scraping* avançado com navegador *headless* (Chromium) para contornar bloqueios (Erro 403) e capturar links dinâmicos no portal CKAN da prefeitura.
+2.  **Schema Evolution & Mapping:** Tratamento dinâmico de colunas criptografadas da API (`LT` -> Latitude, `NV` -> Veículo) e variação de layouts CSV.
+3.  **Lakehouse Local:** Uso de **Delta Lake** para garantir transações ACID e **DuckDB** para query engine OLAP de alta performance sem infraestrutura de nuvem.
 
-Deploy Your Project to Astronomer
-=================================
+---
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
+## 🛠 Tech Stack
 
-Contact
-=======
+| Componente | Tecnologia | Justificativa |
+| :--- | :--- | :--- |
+| **Orquestração** | **Apache Airflow** (Astro) | Gerenciamento robusto de dependências e retentativas. |
+| **Ingestão** | **Playwright (Python)** | Capacidade de emular navegador real para baixar dados onde `requests` padrão falha. |
+| **Processamento** | **PySpark 3.5** | Processamento distribuído para grandes volumes. |
+| **Storage** | **Delta Lake** | Versionamento, Schema Enforcement e performance. |
+| **Warehouse** | **DuckDB** | Leitura direta de arquivos Delta/Parquet (Zero-Copy). |
+| **Ambiente** | **Docker** | Isolamento total de dependências (Java, Drivers, Browsers). |
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+---
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) rodando.
+* [Astro CLI](https://docs.astronomer.io/astro/cli/install-cli) instalado.
+* Git.
+
+### Passo a Passo
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/SEU-USUARIO/bh_mobility_pipeline.git](https://github.com/SEU-USUARIO/bh_mobility_pipeline.git)
+    cd bh_mobility_pipeline
+    ```
+
+2.  **Inicie o Ambiente:**
+    O build inicial pode demorar alguns minutos (instalação do Java, Spark e Browsers do Playwright).
+    ```bash
+    astro dev start
+    ```
+
+3.  **Acesse o Airflow:**
+    * **URL:** `http://localhost:8080`
+    * **User/Pass:** `admin` / `admin`
+
+4.  **Execute o Pipeline:**
+    * Ative a DAG `etl_urban_mobility_bh` e clique em **Trigger**.
+    * Acompanhe a execução das tasks (cor verde = sucesso).
+
+5.  **Validação:**
+    Verifique os logs da task `analytics_check` para ver o relatório gerado pelo DuckDB com as top linhas ativas.
+
+---
+
+## 📊 Dicionário de Dados (Camada Gold)
+
+Tabela: `mobility_analytics` (Formato Delta)
+
+| Coluna | Tipo | Descrição |
+| :--- | :--- | :--- |
+| `cod_linha` | String | Código identificador da linha. |
+| `consorcio` | String | Consórcio responsável (via MCO). |
+| `total_pings` | Long | Total de sinais de GPS recebidos. |
+| `last_seen` | Timestamp | Última localização registrada. |
+| `latitude` / `longitude` | Double | Coordenadas geográficas tratadas. |
+
+> **Nota sobre Dados:** Devido a divergências entre os códigos de linha do sistema de GPS em Tempo Real (ex: códigos internos numéricos) e os códigos públicos do MCO (ex: alfanuméricos), algumas junções podem resultar em campos de dimensão nulos (`None`). A arquitetura prioriza a integridade dos dados de GPS (Left Join) para não descartar eventos de mobilidade.
+
+---
+
+## ⚠️ Troubleshooting
+
+**Erro de Permissão (`Permission Denied` / `Errno 13`)**
+Se ocorrer erro ao salvar arquivos na pasta `data/`:
+* **Solução:** Execute `chmod -R 777 data` na raiz do projeto (Linux/Mac/WSL).
+
+**Playwright: "Executable doesn't exist"**
+Se o Airflow não encontrar o navegador:
+* **Solução:** Certifique-se de que o `Dockerfile` instala as dependências como `root` e o binário do browser como usuário `astro`. Rode `astro dev restart` para reconstruir a imagem.
+
+---
+
+**Autor:** [Seu Nome]
