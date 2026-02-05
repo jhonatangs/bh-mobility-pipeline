@@ -16,20 +16,20 @@ O projeto segue a arquitetura **Medallion (Bronze, Silver, Gold)**, orquestrada 
 
 ```mermaid
 graph LR
-    subgraph "Ingestão Resiliente (Bronze)"
-        PBH[Portal PBH] -->|Playwright/Headless| GPS[Bronze GPS (Parquet)]
-        PBH -->|Playwright/Scraping| MCO[Bronze MCO (Parquet)]
+    subgraph Ingestao ["Ingestão Resiliente (Bronze)"]
+        PBH["Portal PBH"] -->|"Playwright/Headless"| GPS["Bronze GPS (Parquet)"]
+        PBH -->|"Playwright/Scraping"| MCO["Bronze MCO (Parquet)"]
     end
 
-    subgraph "Processamento (Silver)"
-        GPS -->|Spark + Delta| SilverGPS[Silver GPS (Limpeza/Schema)]
-        MCO -->|Spark + Delta| SilverMCO[Silver MCO (Dimensão)]
+    subgraph Processamento ["Processamento (Silver)"]
+        GPS -->|"Spark + Delta"| SilverGPS["Silver GPS (Limpeza/Schema)"]
+        MCO -->|"Spark + Delta"| SilverMCO["Silver MCO (Dimensão)"]
     end
 
-    subgraph "Serving (Gold & Analytics)"
-        SilverGPS -->|Join| Gold[Gold Mobility Analytics]
+    subgraph Serving ["Serving (Gold & Analytics)"]
+        SilverGPS -->|Join| Gold["Gold Mobility Analytics"]
         SilverMCO -->|Join| Gold
-        Gold -->|DuckDB SQL| Analytics[Relatório Final]
+        Gold -->|"DuckDB SQL"| Analytics["Relatório Final"]
     end
 ```
 
