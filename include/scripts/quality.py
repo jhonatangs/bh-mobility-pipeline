@@ -45,24 +45,39 @@ def check_silver_quality():
 
 def check_gold_quality():
     """
-    Verifica se o JOIN funcionou.
+    Verifica se o JOIN funcionou, contabilizando Nulos e Placeholders.
     """
     spark = get_spark_session("QualityCheck")
     df = spark.read.format("delta").load("/opt/airflow/data/gold/mobility_analytics")
 
-    # Verifica taxa de sucesso do JOIN (quantos consórcios foram encontrados)
     total = df.count()
-    unknown_consortium = df.filter(col("consorcio") == "Desconhecido").count()
 
-    match_rate = ((total - unknown_consortium) / total) * 100
+    # CORREÇÃO: Conta como "não enriquecido" se for NULO ou "Desconhecido"
+    # O Spark Left Join gera NULL quando não acha a chave.
+    unknown_consortium = df.filter(
+        (col("consorcio").isNull())
+        | (col("consorcio") == "Desconhecido")
+        | (col("consorcio") == "N/A")
+    ).count()
 
-    print(f"DQ Gold: Taxa de Enriquecimento (Join MCO) = {match_rate:.2f}%")
+    # Evita divisão por zero
+    if total == 0:
+        match_rate = 0.0
+    else:
+        match_rate = ((total - unknown_consortium) / total) * 100
 
-    if match_rate < 10:
+    print(f"DQ Gold: Total={total}, Não Enriquecidos={unknown_consortium}")
+    print(f"DQ Gold: Taxa Real de Enriquecimento = {match_rate:.2f}%")
+
+    # Ajustamos o limiar de alerta. Como sabemos que as chaves da PBH são ruins,
+    # vamos apenas alertar, mas não falhar o pipeline se for > 0%.
+    if match_rate < 1:
         print(
-            "⚠️ ALERTA: O Join com MCO parece ter falhado massivamente (menos de 10% de match)."
+            "⚠️ ALERTA: O Join parece ter falhado totalmente (0% de match). Verifique as chaves."
         )
-        # Não damos raise error aqui pq sabemos que os códigos da PBH divergem,
-        # mas logamos o alerta.
+    elif match_rate < 50:
+        print(
+            f"⚠️ AVISO: Baixa taxa de match ({match_rate:.2f}%). Isso é esperado devido à divergência de IDs da PBH (GPS numérico vs MCO alfanumérico)."
+        )
 
-    print("✅ Gold Quality Check Passou!")
+    print("✅ Gold Quality Check Finalizado.")
